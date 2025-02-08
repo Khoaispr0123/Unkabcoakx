@@ -1342,14 +1342,14 @@ do
     
     					if BypassTP then
     						if (player.Character.HumanoidRootPart.Position - s.Position).Magnitude > 2500 then
-    							BTP(s)
+    							BTP(s.CFrame)
     							print("Tweening đến vị trí:", s.Position)
     						else
-    							Tween(s)
+    							Tween(s.CFrame)
     							print("Tweening đến vị trí:", s.Position)
     						end
     					else
-    						Tween(s)
+    						Tween(s.CFrame)
     					end
     
     					if (s.Position - player.Character.HumanoidRootPart.Position).Magnitude <= 5 then
@@ -1363,6 +1363,7 @@ do
     							if enemy.Name == Ms then
     								repeat
     									wait(0.2)
+            print("Tim Thay quai: "..enemy.Name
     									-- AttackNoCD()
     									AutoHaki()
     									EquipTool(SelectWeapon)
