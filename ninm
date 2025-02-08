@@ -1329,6 +1329,7 @@ do
     		if _G.AutoLevel then
     			pcall(function()
     			    print("Đang thực thi farming mode: ", _G.FarmMode)
+    			    print("Đã gọi CheckLevel()")
     				CheckLevel()
     
     				local player = game:GetService("Players").LocalPlayer
