@@ -60,6 +60,10 @@ local Tabs = {
     -- Hop = Window:AddTab({ Title = "Hop", Icon = "wifi" }),
 }
 
+local posZ = 0
+local posY = 70
+local posX = 0
+
 First_Sea = false
 Second_Sea = false
 Third_Sea = false
@@ -1202,12 +1206,53 @@ do
         end
     end)
     
+    local posZSlider = Tabs.Pvp:AddSlider("Slider", {
+        Title = "Position Z",
+        Description = "",
+        Default = posZ,
+        Min = 0,
+        Max = 120,
+        Rounding = 1,
+        Callback = function(Value)
+            posZ = Value
+        end
+    })
+
+    local posYSlider = Tabs.Pvp:AddSlider("Slider", {
+        Title = "Position Y",
+        Description = "",
+        Default = posY,
+        Min = 0,
+        Max = 120,
+        Rounding = 1,
+        Callback = function(Value)
+            posY = Value
+        end
+    })
+
+    local posXSlider = Tabs.Pvp:AddSlider("Slider", {
+        Title = "Position X",
+        Description = "",
+        Default = posX,
+        Min = 0,
+        Max = 120,
+        Rounding = 1,
+        Callback = function(Value)
+            posX = Value
+        end
+    })
+
 	local FarmModeDropDown = Tabs.Main:AddDropdown("Farm Mode", {
         Title = "Farm Mode",
         Values = {"Level", "Bone", "Cake Prince", "Nearest"},
         Multi = false,
         Default = 1,
     })
+
+    FarmModeDropDown:SetValue("...")
+    FarmModeDropDown:OnChanged(function(Value)
+        _G.FarmMode = Value
+    end)
  
 	local WeaponsDropDown = Tabs.Main:AddDropdown("Weapons", {
         Title = "Weapons",
@@ -1215,16 +1260,63 @@ do
         Multi = false,
         Default = 1,
     })
+
+    WeaponsDropDown:SetValue('Melee')
+    WeaponsDropDown:OnChanged(function(Value)
+        ChooseWeapon = Value
+    end)
+    task.spawn(function()
+        while wait() do
+            pcall(function()
+                if ChooseWeapon == "Melee" then
+                    for i ,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v.ToolTip == "Melee" then
+                            if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(v.Name)) then
+                                SelectWeapon = v.Name
+                            end
+                        end
+                    end
+                elseif ChooseWeapon == "Sword" then
+                    for i ,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v.ToolTip == "Sword" then
+                            if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(v.Name)) then
+                                SelectWeapon = v.Name
+                            end
+                        end
+                    end
+                elseif ChooseWeapon == " Blox Fruit" then
+                    for i ,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v.ToolTip == "Blox Fruit" then
+                            if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(v.Name)) then
+                                SelectWeapon = v.Name
+                            end
+                        end
+                    end
+                else
+                    for i ,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+                        if v.ToolTip == "Melee" then
+                            if game.Players.LocalPlayer.Backpack:FindFirstChild(tostring(v.Name)) then
+                                SelectWeapon = v.Name
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
  
     local StartFarm = Tabs.Main:AddToggle("StartFarm", {Title = "Start Farm", Default = false })
  
     StartFarm:OnChanged(function(Value)
-        if _G.AutoLevel then
+        if _G.FarmMode == "Level" then
 			_G.AutoLevel = Value
 			print("Auto Level")
-		elseif _G.AutoBone then
+		elseif _G.FarmMode == "Bone" then
 			_G.AutoBone = Value
 			print("Auto Bone")
+		elseif _G.FarmMode == "Nearest" then
+		   _G.AutoNear = Value
+		   print("Farm Nearest")
 		end
     end)
  
@@ -1232,132 +1324,160 @@ do
 	local BoneCFrame = CFrame.new(-9515.75, 174.8521728515625, 6079.40625)
 	local BoneCFrame2 = CFrame.new(-9359.453125, 141.32679748535156, 5446.81982421875)
 
-	spawn(function()
-		while task.wait() do
-			if _G.AutoLevel then
-				pcall(function()
-					CheckLevel()
-					
-					local player = game:GetService("Players").LocalPlayer
-					local questGUI = player.PlayerGui.Main.Quest
-					local questTitle = questGUI.Container.QuestTitle.Title.Text
-					
-					-- Kiểm tra nhiệm vụ hiện tại
-					if not string.find(questTitle, NameMon) or not questGUI.Visible then
-						game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+    spawn(function()
+    	while task.wait() do
+    		if _G.AutoLevel then
+    			pcall(function()
+    			    print("Đang thực thi farming mode: ", _G.FarmMode)
+    				CheckLevel()
+    
+    				local player = game:GetService("Players").LocalPlayer
+    				local questGUI = player.PlayerGui.Main.Quest
+    				local questTitle = questGUI.Container.QuestTitle.Title.Text
+    
+    				-- Kiểm tra nhiệm vụ hiện tại
+    				if not string.find(questTitle, NameMon) or not questGUI.Visible then
+    					game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+    
+    					if BypassTP then
+    						if (player.Character.HumanoidRootPart.Position - s.Position).Magnitude > 2500 then
+    							BTP(s)
+    							print("Tweening đến vị trí:", s.Position)
+    						else
+    							Tween(s)
+    							print("Tweening đến vị trí:", s.Position)
+    						end
+    					else
+    						Tween(s)
+    					end
+    
+    					if (s.Position - player.Character.HumanoidRootPart.Position).Magnitude <= 5 then
+    						game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
+    						print("Gửi yêu cầu nhiệm vụ:", NameQuest, QuestLv)
+    					end
+    				else
+    					-- Bắt đầu farm quái
+    					for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+    						if enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
+    							if enemy.Name == Ms then
+    								repeat
+    									wait(0.2)
+    									-- AttackNoCD()
+    									AutoHaki()
+    									EquipTool(SelectWeapon)
+    									Tween(enemy.HumanoidRootPart.CFrame * CFrame.new(posX, posY, posZ))
+    
+    									-- Điều chỉnh quái
+    									enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+    									enemy.HumanoidRootPart.Transparency = 1
+    									enemy.Humanoid.JumpPower = 0
+    									enemy.Humanoid.WalkSpeed = 0
+    									enemy.HumanoidRootPart.CanCollide = false
+    									
+    									-- Lưu vị trí farm
+    									FarmPos = enemy.HumanoidRootPart.CFrame
+    									MonFarm = enemy.Name
+    								until not _G.AutoLevel 
+    									or not enemy.Parent 
+    									or enemy.Humanoid.Health <= 0 
+    									or not game:GetService("Workspace").Enemies:FindFirstChild(enemy.Name) 
+    									or not questGUI.Visible
+    							end
+    						end
+    					end
+    
+    					-- Di chuyển đến vị trí spawn quái
+    					for _, spawn in pairs(game:GetService("Workspace")["_WorldOrigin"].EnemySpawns:GetChildren()) do
+    						if string.find(spawn.Name, NameMon) then
+    							if (player.Character.HumanoidRootPart.Position - spawn.Position).Magnitude >= 10 then
+    								Tween(spawn.CFrame * CFrame.new(posX, posY, posZ))
+    							end
+    						end
+    					end
+    				end
+    			end)
+    		elseif _G.AutoBone then
+    			pcall(function()
+    			    print("Đang thực thi farming mode: ", _G.FarmMode)
+    				local QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
+    				if not string.find(QuestTitle, "Demonic Soul") then
+    					game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+    				end
+    				if game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false then
+    					if BypassTP then
+    						wait()
+    						if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - BoneCFrame2.Position).Magnitude > 2500 then
+    							BTP(BoneCFrame2)
+    						elseif (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - BoneCFrame.Position).Magnitude < 2500 then
+    							Tween(BoneCFrame)
+    						end
+    					else
+    						Tween(BoneCFrame)
+    					end
+    					if (BoneCFrame.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 3 then    
+    						game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest","HauntedQuest2",1)
+    					end
+    				elseif game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true then
+    					if game:GetService("Workspace").Enemies:FindFirstChild("Reborn Skeleton") or game:GetService("Workspace").Enemies:FindFirstChild("Living Zombie") or game:GetService("Workspace").Enemies:FindFirstChild("Demonic Soul") or game:GetService("Workspace").Enemies:FindFirstChild("Posessed Mummy") then
+    						for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+    							if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+    								if v.Name == "Reborn Skeleton" or v.Name == "Living Zombie" or v.Name == "Demonic Soul" or v.Name == "Posessed Mummy" then
+    									if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, "Demonic Soul") then
+    										repeat wait(0.2)
+    											-- AttackNoCD()
+    											AutoHaki()
+    											EquipTool(SelectWeapon)
+    											Tween(v.HumanoidRootPart.CFrame * CFrame.new(posX,posY,posZ))
+    											v.HumanoidRootPart.Size = Vector3.new(1, 1, 1)
+    											v.HumanoidRootPart.Transparency = 1
+    											v.Humanoid.JumpPower = 0
+    											v.Humanoid.WalkSpeed = 0
+    											v.HumanoidRootPart.CanCollide = false
+    											FarmPos = v.HumanoidRootPart.CFrame
+    											MonFarm = v.Name
+    										until not _G.AutoBone or v.Humanoid.Health <= 0 or not v.Parent or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
+    									else
+    										game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
+    									end
+    								end
+    							end
+    						end
+    					else
+    						if game:GetService("ReplicatedStorage"):FindFirstChild("Demonic Soul") then
+    							Tween(v.HumanoidRootPart.CFrame * Pos2)
+    						end
+    					end
+    				end
+    			end)
+    		elseif _G.AutoNear then
+    			pcall(function()
+    			    print("Đang thực thi farming mode: ", _G.FarmMode)
+    				for i,v in pairs (game.Workspace.Enemies:GetChildren()) do
+    					if v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+    						if v.Name then
+    							if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v:FindFirstChild("HumanoidRootPart").Position).Magnitude <= 5000 then
+    								repeat wait(_G.Fast_Delay)
+    									AttackNoCD()
+    									AutoHaki()
+    									EquipTool(SelectWeapon)
+    									Tween(v.HumanoidRootPart.CFrame * CFrame.new(posX,posY,posZ))
+    									v.HumanoidRootPart.Size = Vector3.new(1, 1, 1)
+    									v.HumanoidRootPart.Transparency = 1
+    									v.Humanoid.JumpPower = 0
+    									v.Humanoid.WalkSpeed = 0
+    									v.HumanoidRootPart.CanCollide = false
+    									FarmPos = v.HumanoidRootPart.CFrame                                      
+    									MonFarm = v.Name
+    								until not _G.AutoNear or not v.Parent or v.Humanoid.Health <= 0 or not game.Workspace.Enemies:FindFirstChild(v.Name)
+    							end
+    						end
+    					end
+    				end
+    			end)
+    		end
+    	end
+    end)
 
-						if BypassTP then
-							if (player.Character.HumanoidRootPart.Position - s.Position).Magnitude > 2500 then
-								BTP(s)
-							else
-								Tween(s)
-							end
-						else
-							Tween(s)
-						end
-
-						if (s.Position - player.Character.HumanoidRootPart.Position).Magnitude <= 5 then
-							game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", NameQuest, QuestLv)
-						end
-					else
-						-- Bắt đầu farm quái
-						for _, enemy in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-							if enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
-								if enemy.Name == Ms then
-									repeat
-										wait(_G.Fast_Delay)
-										-- AttackNoCD()
-										AutoHaki()
-										EquipTool(SelectWeapon)
-										Tween(enemy.HumanoidRootPart.CFrame * CFrame.new(posX, posY, posZ))
-
-										-- Điều chỉnh quái
-										enemy.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
-										enemy.HumanoidRootPart.Transparency = 1
-										enemy.Humanoid.JumpPower = 0
-										enemy.Humanoid.WalkSpeed = 0
-										enemy.HumanoidRootPart.CanCollide = false
-										
-										-- Lưu vị trí farm
-										FarmPos = enemy.HumanoidRootPart.CFrame
-										MonFarm = enemy.Name
-									until not _G.AutoLevel 
-										or not enemy.Parent 
-										or enemy.Humanoid.Health <= 0 
-										or not game:GetService("Workspace").Enemies:FindFirstChild(enemy.Name) 
-										or not questGUI.Visible
-								end
-							end
-						end
-
-						-- Di chuyển đến vị trí spawn quái
-						for _, spawn in pairs(game:GetService("Workspace")["_WorldOrigin"].EnemySpawns:GetChildren()) do
-							if string.find(spawn.Name, NameMon) then
-								if (player.Character.HumanoidRootPart.Position - spawn.Position).Magnitude >= 10 then
-									Tween(spawn.CFrame * CFrame.new(posX, posY, posZ))
-								end
-							end
-						end
-					end
-				end)
-			elseif _G.AutoBone then
-				pcall(function()
-					local QuestTitle = game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text
-					if not string.find(QuestTitle, "Demonic Soul") then
-						game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-					end
-					if game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false then
-						if BypassTP then
-							wait()
-						if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - BoneCFrame2.Position).Magnitude > 2500 then
-						BTP(BoneCFrame2)
-						elseif (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - BoneCFrame.Position).Magnitude < 2500 then
-						Tween(BoneCFrame)
-						end
-					else
-							Tween(BoneCFrame)
-							end
-					if (BoneCFrame.Position - game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.Position).Magnitude <= 3 then    
-						game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest","HauntedQuest2",1)
-						end
-					elseif game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == true then
-						if game:GetService("Workspace").Enemies:FindFirstChild("Reborn Skeleton") or game:GetService("Workspace").Enemies:FindFirstChild("Living Zombie") or game:GetService("Workspace").Enemies:FindFirstChild("Demonic Soul") or game:GetService("Workspace").Enemies:FindFirstChild("Posessed Mummy") then
-							for i,v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-								if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-									if v.Name == "Reborn Skeleton" or v.Name == "Living Zombie" or v.Name == "Demonic Soul" or v.Name == "Posessed Mummy" then
-										if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, "Demonic Soul") then
-											repeat wait(_G.Fast_Delay)
-												-- AttackNoCD()
-												AutoHaki()
-												EquipTool(SelectWeapon)
-														Tween(v.HumanoidRootPart.CFrame * CFrame.new(posX,posY,posZ))
-												v.HumanoidRootPart.Size = Vector3.new(1, 1, 1)
-												v.HumanoidRootPart.Transparency = 1
-												v.Humanoid.JumpPower = 0
-												v.Humanoid.WalkSpeed = 0
-												v.HumanoidRootPart.CanCollide = false
-												FarmPos = v.HumanoidRootPart.CFrame
-												MonFarm = v.Name
-									
-												--Click
-											until not _G.AutoBone or v.Humanoid.Health <= 0 or not v.Parent or game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Visible == false
-										else
-											game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AbandonQuest")
-										end
-									end
-								end
-							end
-						else
-							if game:GetService("ReplicatedStorage"):FindFirstChild("Demonic Soul") then
-							Tween(v.HumanoidRootPart.CFrame * Pos2)
-							end
-						end
-						
-					end
-				end)
-			end
-		end
-	end)
 
 	--Teleport
 	local Teleport = Tabs.Teleport:AddSection("Teleport World")
