@@ -25,6 +25,11 @@ task.spawn(function()
         end)
     end
 end)
+
+local plr = game.Players.LocalPlayer
+
+local togglespeedvalue = false
+
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
  
 local Window = Fluent:CreateWindow({
@@ -39,19 +44,20 @@ local Window = Fluent:CreateWindow({
  
 --Fluent provides Lucide Icons https://lucide.dev/icons/ for the tabs, icons are optional
 local Tabs = {
-	Info = Window:AddTab({ Title = "Infomation", Icon = "home" }),
+	-- Info = Window:AddTab({ Title = "Infomation", Icon = "home" }),
     Main = Window:AddTab({ Title = "Main Farm", Icon = "home" }),
-	Items = Window:AddTab({ Title = "Quest - Items", Icon = "home" }),
+	-- Items = Window:AddTab({ Title = "Quest - Items", Icon = "home" }),
     Setting = Window:AddTab({ Title = "Setting Farming", Icon = "settings" }),
-    Stats = Window:AddTab({ Title = "Stats", Icon = "plus-circle" }),
-    Player = Window:AddTab({ Title = "Player", Icon = "baby" }),
+    -- Stats = Window:AddTab({ Title = "Stats", Icon = "plus-circle" }),
+    -- Player = Window:AddTab({ Title = "Player", Icon = "baby" }),
+	Pvp = Window:AddTab({ Title = "PVP", Icon = "swords" }),
     Teleport = Window:AddTab({ Title = "Travel", Icon = "palmtree" }),
-    Fruit = Window:AddTab({ Title = "Devil Fruit", Icon = "cherry" }),
-    Raid = Window:AddTab({ Title = "Raid", Icon = "swords" }),
-    Race = Window:AddTab({ Title = "Race V4", Icon = "chevrons-right" }),
+    -- Fruit = Window:AddTab({ Title = "Devil Fruit", Icon = "cherry" }),
+    -- Raid = Window:AddTab({ Title = "Raid", Icon = "swords" }),
+    -- Race = Window:AddTab({ Title = "Race V4", Icon = "chevrons-right" }),
     Shop = Window:AddTab({ Title = "Buy Items", Icon = "shopping-cart" }),
     Misc = Window:AddTab({ Title = "Miscellaneous", Icon = "list-plus" }),
-    Hop = Window:AddTab({ Title = "Hop", Icon = "wifi" }),
+    -- Hop = Window:AddTab({ Title = "Hop", Icon = "wifi" }),
 }
 
 First_Sea = false
@@ -65,6 +71,13 @@ elseif placeId == 4442272183 then
 Second_Sea = true
 elseif placeId == 7449423635 then
 Third_Sea = true
+end
+
+function resetcharacter()
+	local char = plr.Character or plr.CharacterAdded:Wait()
+	if char then
+		char:BreakJoints()
+	end
 end
 
 function BTP(P)
@@ -115,6 +128,17 @@ function BTP(p)
 		end
 	end)
 end
+
+local saberQuest = {
+    plate1 = workspace.Map.Jungle.QuestPlates.Plate1.Button,
+    plate2 = workspace.Map.Jungle.QuestPlates.Plate2.Button,
+    plate3 = workspace.Map.Jungle.QuestPlates.Plate3.Button,
+    plate4 = workspace.Map.Jungle.QuestPlates.Plate4.Button,
+    plate5 = workspace.Map.Jungle.QuestPlates.Plate5.Button,
+    torch = workspace.Map.Jungle.Torch,
+    firedoor = workspace.Map.Desert.Burn.Fire,
+    cup = workspace.Map.Desert.Cup
+}
 
 function AutoHaki()
     if not game:GetService("Players").LocalPlayer.Character:FindFirstChild("HasBuso") then
@@ -817,64 +841,49 @@ function EquipTool(ToolSe)
 	end
 end
 
-local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HRP = Character:WaitForChild("HumanoidRootPart")
+---------Tween
+function Tween2(P1)
+    local Distance = (P1.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    if Distance >= 1 then
+        Speed = 300
+    end
+    game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart,TweenInfo.new(Distance/Speed, Enum.EasingStyle.Linear), {
+        CFrame = P1
+    }):Play()
+    if _G.CancelTween2 then
+        game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart,TweenInfo.new(Distance/Speed, Enum.EasingStyle.Linear), {
+            CFrame = P1
+        }):Cancel()
+    end
+        _G.Clip2 = true
+        wait(Distance/Speed)
+        _G.Clip2 = false
+    end
+   
 
-local ActiveTween -- Lưu Tween đang chạy
+
+
+
+local TweenService = game:GetService("TweenService")
+local ChangeSpeed = 250  -- Giá trị tốc độ mặc định
 
 function Tween(P1)
-    if not P1 then return end
+    local RootPart = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not RootPart then return end -- Kiểm tra nếu nhân vật tồn tại
 
-    local Distance = (P1.Position - HRP.Position).Magnitude
-    local Speed = 300 -- Tốc độ di chuyển trên không
-    local HoverHeight = 50 -- Độ cao bay trên mặt đất
+    local TargetPosition = P1.Position or P1 -- Lấy vị trí của Part hoặc CFrame
+    local Distance = (TargetPosition - RootPart.Position).Magnitude
+    local Speed = ChangeSpeed
 
-    if Distance < 1 then return end -- Nếu đã gần thì không Tween nữa
+    if Distance < 1 then return end -- Nếu khoảng cách quá nhỏ thì không cần Tween
 
-    -- Hủy Tween trước đó (nếu có)
-    if ActiveTween then
-        ActiveTween:Cancel()
-    end
+    -- Nếu _G.StopTween được bật, không chạy Tween
+    if _G.StopTween or not _G.TeleportIsland then return end
 
-    -- **BƯỚC 1: Bay lên cao trước khi di chuyển**
-    local UpCFrame = HRP.CFrame * CFrame.new(0, HoverHeight, 0)
-    ActiveTween = TweenService:Create(HRP, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = UpCFrame})
-    ActiveTween:Play()
-    ActiveTween.Completed:Wait()
+    local TweenInfo = TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear)
+    local Tween = TweenService:Create(RootPart, TweenInfo, {CFrame = CFrame.new(TargetPosition)})
 
-    -- **BƯỚC 2: Bay đến vị trí đích nhưng vẫn giữ độ cao**
-    local MidCFrame = CFrame.new(P1.Position.X, HRP.Position.Y, P1.Position.Z)
-    ActiveTween = TweenService:Create(HRP, TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear), {CFrame = MidCFrame})
-    ActiveTween:Play()
-    ActiveTween.Completed:Wait()
-
-    -- **BƯỚC 3: Hạ xuống từ từ khi đến nơi**
-    ActiveTween = TweenService:Create(HRP, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {CFrame = P1})
-    ActiveTween:Play()
-    ActiveTween.Completed:Wait()
-    ActiveTween:Cancel()
-end
-
-function Tween2(P1)
-    if not P1 then return end
-
-    local Distance = (P1.Position - HRP.Position).Magnitude
-    local Speed = 100
-
-    if Distance < 1 then return end
-
-    -- Hủy Tween cũ nếu đang chạy
-    if ActiveTween then
-        ActiveTween:Cancel()
-    end
-
-    -- **Di chuyển thẳng tới vị trí**
-    ActiveTween = TweenService:Create(HRP, TweenInfo.new(Distance / Speed, Enum.EasingStyle.Linear), {CFrame = P1})
-    ActiveTween:Play()
-    ActiveTween.Completed:Wait()
+    Tween:Play()
 end
 
 function CancelTween(target)
@@ -886,7 +895,6 @@ function CancelTween(target)
         _G.StopTween = false
     end
 end
-
 
 local Options = Fluent.Options
  
@@ -1072,7 +1080,7 @@ do
     })
     
     Tabs.Misc:AddButton({
-    	Title = "Hop Server",
+    	Title = "Hop Server (ID:17 Error)",
     	Description = "",
     	Callback = function()
     		Hop()
@@ -1178,12 +1186,18 @@ do
     end)
     Options.ToggleRemoveNotify:SetValue(false)
 
-    spawn(function()
-        while wait() do
-            if RemoveNotify then
-                game.Players.LocalPlayer.PlayerGui.Notifications.Enabled = false
+    task.spawn(function()
+        while true do
+            task.wait()  -- Dùng task.wait() thay vì wait() để giảm lag
+            local player = game.Players.LocalPlayer
+            local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Notifications")
+            
+            if gui then
+                gui.Enabled = not RemoveNotify
             else
-                game.Players.LocalPlayer.PlayerGui.Notifications.Enabled = true
+                warn("Error: Notifications GUI không tồn tại.")
+                wait(1)
+                plr:Kick("An unknown error has occurred. We apologize for this issue. Please rejoin.")
             end
         end
     end)
@@ -1252,7 +1266,7 @@ do
 								if enemy.Name == Ms then
 									repeat
 										wait(_G.Fast_Delay)
-										AttackNoCD()
+										-- AttackNoCD()
 										AutoHaki()
 										EquipTool(SelectWeapon)
 										Tween(enemy.HumanoidRootPart.CFrame * CFrame.new(posX, posY, posZ))
@@ -1313,7 +1327,7 @@ do
 									if v.Name == "Reborn Skeleton" or v.Name == "Living Zombie" or v.Name == "Demonic Soul" or v.Name == "Posessed Mummy" then
 										if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Main.Quest.Container.QuestTitle.Title.Text, "Demonic Soul") then
 											repeat wait(_G.Fast_Delay)
-												AttackNoCD()
+												-- AttackNoCD()
 												AutoHaki()
 												EquipTool(SelectWeapon)
 														Tween(v.HumanoidRootPart.CFrame * CFrame.new(posX,posY,posZ))
@@ -1566,26 +1580,83 @@ do
 		task.wait()
 		game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = Point
     end
+	
+	local ToggleSpeed = Tabs.Pvp:AddToggle("ToggleSpeed", {Title = "Toggle Speed", Default = false })
  
-    local Slider = Tabs.Main:AddSlider("Slider", {
-        Title = "Slider",
-        Description = "This is a slider",
-        Default = 2,
+    ToggleSpeed:OnChanged(function(Value)
+        if togglespeedvalue == false then
+            togglespeedvalue = true
+        else
+            togglespeedvalue = false
+        end
+    end)
+ 
+    Options.ToggleSpeed:SetValue(false)
+    
+    local ToggleWalkOnWater = Tabs.Pvp:AddToggle("ToggleWalkOnWater", {Title = "Walk On Water", Default = false })
+ 
+    ToggleWalkOnWater:OnChanged(function(Value)
+        local water = workspace._WorldOrigin["Foam;"]
+        if not water then
+           plr:Kick("There Aren't any water in the game (Wrong Game Bro")
+        end
+        
+        if water then
+            water.CanCollide = Value
+        end    
+    end)
+ 
+    Options.ToggleSpeed:SetValue(false)
+
+    local Slider = Tabs.Pvp:AddSlider("Slider", {
+        Title = "Speed",
+        Description = "Speed",
+        Default = 16,
         Min = 0,
-        Max = 5,
+        Max = 500,
         Rounding = 1,
         Callback = function(Value)
-            print("Slider was changed:", Value)
+            print("Set WalkSpeed: "..Value)
         end
     })
  
     Slider:OnChanged(function(Value)
-        print("Slider changed:", Value)
+        -- print("Slider changed:", Value)
+        if togglespeedvalue == true then
+    		local char = plr.Character or plr.CharacterAdded:Wait()
+    		char:SetAttribute("SpeedMultiplier", Value)
+    	end
     end)
+    
+    local SliderJumpHeight = Tabs.Pvp:AddSlider("Slider", {
+        Title = "Jump Height",
+        Description = "",
+        Default = 50,
+        Min = 0,
+        Max = 500,
+        Rounding = 1,
+        Callback = function(Value)
+            print("Set Jump Height: "..Value)
+            local char = plr.Character or plr.CharacterAdded:Wait()
+    	    char.Humanoid.JumpPower = Value
+        end
+    })
+    
+    local SliderDashLength = Tabs.Pvp:AddSlider("Slider", {
+        Title = "Dash Length",
+        Description = "",
+        Default = 50,
+        Min = 0,
+        Max = 500,
+        Rounding = 1,
+        Callback = function(Value)
+            print("Set Dash Length: "..Value)
+            local char = plr.Character or plr.CharacterAdded:Wait()
+    	    char:SetAttribute("DashLength", Value)
+        end
+    })
  
-    Slider:SetValue(3)
- 
-     Tabs.Main:AddSection("Farm")
+    Tabs.Main:AddSection("Farm")
  
     local MultiDropdown = Tabs.Main:AddDropdown("MultiDropdown", {
         Title = "Dropdown",
@@ -1721,8 +1792,8 @@ SaveManager:SetIgnoreIndexes({})
 InterfaceManager:SetFolder("FluentScriptHub")
 SaveManager:SetFolder("FluentScriptHub/specific-game")
  
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
+InterfaceManager:BuildInterfaceSection(Tabs.Misc)
+SaveManager:BuildConfigSection(Tabs.Misc)
  
  
 Window:SelectTab(1)
