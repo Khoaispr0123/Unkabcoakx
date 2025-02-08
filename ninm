@@ -1,6 +1,6 @@
 repeat task.wait(0.25) until game:IsLoaded();
 getgenv().Image = "rbxassetid://83315070789788"; -- put a asset id in here to make it work
-getgenv().ToggleUI = "E" -- This where you can Toggle the Fluent ui library
+getgenv().ToggleUI = "LeftControl" -- This where you can Toggle the Fluent ui library
  
 task.spawn(function()
     if not getgenv().LoadedMobileUI == true then getgenv().LoadedMobileUI = true
@@ -39,7 +39,7 @@ local Window = Fluent:CreateWindow({
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true, -- The blur may be detectable, setting this to false disables blur entirely
     Theme = "Darker",
-    MinimizeKey = Enum.KeyCode.E -- Used when theres no MinimizeKeybind
+    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
 })
  
 --Fluent provides Lucide Icons https://lucide.dev/icons/ for the tabs, icons are optional
